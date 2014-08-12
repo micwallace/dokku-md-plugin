@@ -2,8 +2,9 @@
 set -e;
 
 # Check if name is specified
-if [[ $1 == mariadb:* ]]; then
+if [[ $1 == mysqldb:* ]]; then
     if [[ -z $2 ]]; then
+        echo
         echo "You must specify an app name"
         exit 1
     else
@@ -18,106 +19,58 @@ if [[ $1 == mariadb:* ]]; then
 fi
 
 # Create .mariadb directory if does not exist
-if [[ ! -d $DOKKU_ROOT/.mariadb ]]; then
-    mkdir -p $DOKKU_ROOT/.mariadb
-    chown -R dokku: $DOKKU_ROOT/.mariadb
+if [[ ! -d $DOKKU_ROOT/.mysql-configs ]]; then
+    mkdir -p $DOKKU_ROOT/.mysql-configs
+    chown -R dokku: $DOKKU_ROOT/.mysql-configs
 fi
 
 case "$1" in
 
-  mariadb:create)
-    DB_IMAGE=mariadb/$APP
-    # Check if DB container is installed
-    IMAGE=$(docker images | grep "kloadut/mariadb " |  awk '{print $3}')
-    if [[ -z $IMAGE ]]; then
-        echo "MariaDB image not found... Did you run 'dokku plugins-install' ?"
-        exit 1
-    fi
+  mysqldb:create)
     # Check if an existing DB volume exists
-    if [[ -f "$DOKKU_ROOT/.mariadb/volume_$APP" ]]; then
-        VOLUME="`cat $DOKKU_ROOT/.mariadb/volume_$APP`:/opt/mysql"
+    if [[ -f "$DOKKU_ROOT/.mysql-configs/pwd_$APP" ]]; then
+        #VOLUME="`cat $DOKKU_ROOT/.mariadb/volume_$APP`:/opt/mysql"
         echo
-        echo "-----> Reusing mariadb/$APP database"
+        echo "-----> Existing database detected for $APP, skipping DB install"
     else
-        VOLUME="/opt/mysql"
+        #VOLUME="/opt/mysql"
         # Generate a random password for DB user
         DB_PASSWORD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c 16)
-        echo $DB_PASSWORD > "$DOKKU_ROOT/.mariadb/pwd_$APP"
-        chown dokku: "$DOKKU_ROOT/.mariadb/pwd_$APP"
-        chmod 700 "$DOKKU_ROOT/.mariadb/pwd_$APP"
+        echo $DB_PASSWORD > "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
+        chown dokku: "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
+        chmod 700 "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
+        # connect to mySql server and create database if it does not exist.
+        echo
+        echo "-----> MySQL Database  created for: $APP"
+        # add user & set db permissions
+        
+        # I don't think we need this, we will set master static port. Write port for further usage
+        PORT=$(docker port $ID 3306 | sed 's/0.0.0.0://')
+        echo $PORT > "$DOKKU_ROOT/.mysql-configs/port_$APP"
+        # Link to a potential existing app
+        #dokku mariadb:link $APP $APP
+        
     fi
-    # Stop existing container with the same persistent DB
-    ID=$(docker ps | grep "$DB_IMAGE":latest |  awk '{print $1}')
-    if [[ ! -z "$ID" ]]; then
-        docker stop $ID > /dev/null
-    fi
-    # Fork DB image
-    ID=$(docker run -d kloadut/mariadb /bin/bash "exit 0")
-    docker wait $ID > /dev/null
-    IMAGE=$(docker commit $ID)
-    docker tag $IMAGE $DB_IMAGE
-    # Launch container
-    ID=$(docker run -v $VOLUME -p 3306 -d $DB_IMAGE /usr/bin/start_mariadb.sh $DB_PASSWORD)
-    sleep 4
-    # Store persistent volume
-    if [[ ! -f "$DOKKU_ROOT/.mariadb/volume_$APP" ]]; then
-        VOLUME_PATH=$(docker inspect $ID | grep /var/lib/docker/vfs/dir/ | awk '{print $2}' | sed -e's/"//g')
-        if [[ -z $VOLUME_PATH ]]; then
-            echo "Your docker version is too old, please update it"
-            exit 1
-        fi
-        echo $VOLUME_PATH > "$DOKKU_ROOT/.mariadb/volume_$APP"
-    fi
-    # Write port for further usage
-    PORT=$(docker port $ID 3306 | sed 's/0.0.0.0://')
-    echo $PORT > "$DOKKU_ROOT/.mariadb/port_$APP"
-    # Link to a potential existing app
-    dokku mariadb:link $APP $APP
-    echo
-    echo "-----> MariaDB container created: $DB_IMAGE"
     sleep 1
-    dokku mariadb:info $APP
+    dokku mysqldb:info $APP
     ;;
 
-  mariadb:delete)
-    DB_IMAGE=mariadb/$APP
-    ID=$(docker ps -a | grep "$DB_IMAGE":latest |  awk '{print $1}')
-    # Stop the container
-    if [[ ! -z $ID ]]; then
-        docker kill $ID > /dev/null
-        sleep 1
-        docker rm $ID > /dev/null
-        sleep 1
-    fi
-    # Remove image
-    IMAGE=$(docker images | grep "$DB_IMAGE " |  awk '{print $1}')
-    if [[ ! -z $IMAGE ]]; then
-        docker rmi $IMAGE > /dev/null
-    fi
+  mysqldb:delete)
     # Remove container port storage
-    if [[ -f "$DOKKU_ROOT/.mariadb/port_$APP" ]]; then
-        rm -f "$DOKKU_ROOT/.mariadb/port_$APP"
+    if [[ -f "$DOKKU_ROOT/.mysql-configs/port_$APP" ]]; then
+        rm -f "$DOKKU_ROOT/.mysql-configs/port_$APP"
     fi
-    # Remove container root password
-    if [[ -f "$DOKKU_ROOT/.mariadb/pwd_$APP" ]]; then
-        rm -f "$DOKKU_ROOT/.mariadb/pwd_$APP"
+    # Remove container db password
+    if [[ -f "$DOKKU_ROOT/.mysql-configs/pwd_$APP" ]]; then
+        rm -f "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
     fi
-    # Remove persistent volume
-    if [[ -f "$DOKKU_ROOT/.mariadb/volume_$APP" ]]; then
-        sleep 4
-        rm -rf "$(cat $DOKKU_ROOT/.mariadb/volume_$APP)"
-        rm -f "$DOKKU_ROOT/.mariadb/volume_$APP"
-    fi
+    
+    # Connect to mysql, backup database & delete
     echo
-    echo "-----> MariaDB container deleted: $DB_IMAGE"
+    echo "-----> MySQL database deleted for: $APP"
     ;;
 
-  mariadb:info)
-    DB_IMAGE=mariadb/$APP
-    if [[ ! -f "$DOKKU_ROOT/.mariadb/pwd_$APP" ]]; then
-        echo "Unknown (or too old) MariaDB container"
-        exit 1
-    fi
+  mysqldb:info)
     echo
     echo "       Host: 172.17.42.1"
     echo "       Port: $(cat "$DOKKU_ROOT/.mariadb/port_$APP")"
@@ -127,49 +80,14 @@ case "$1" in
     echo
     ;;
 
-  mariadb:link)
-    if $APP_EXISTS; then
-        # Check argument
-        if [[ -z $3 ]]; then
-            echo "Linking db to $APP"
-            DB_IMAGE="mariadb/$APP"
-            DB_PASSWORD=$(cat "$DOKKU_ROOT/.mariadb/pwd_$APP")
-            PORT=$(cat "$DOKKU_ROOT/.mariadb/port_$APP")
-            # Link database using dokku command
-            dokku config:set $APP "DATABASE_URL=mysql2://root:$DB_PASSWORD@172.17.42.1:$PORT/db"
-            #All DB-variables as ENV
-            dokku config:set $APP "DB_HOST=172.17.42.1 DB_PASS=$DB_PASSWORD DB_NAME=db DB_PORT=$PORT DB_USER=root"
-            exit 1
-        fi
-        DB_IMAGE="mariadb/$3"
-        if [[ ! -f "$DOKKU_ROOT/.mariadb/pwd_$3" ]]; then
-            echo "Database is not initialized correctly"
-            exit 1
-        fi
-        DB_PASSWORD=$(cat "$DOKKU_ROOT/.mariadb/pwd_$3")
-        PORT=$(cat "$DOKKU_ROOT/.mariadb/port_$3")
-        # Link database using dokku command
-        dokku config:set $APP "DATABASE_URL=mysql2://root:$DB_PASSWORD@172.17.42.1:$PORT/db"
-        #All DB-variables as ENV
-        dokku config:set $APP "DB_HOST=172.17.42.1 DB_PASSWORD=$DB_PASSWORD DB_NAME=db DB_PORT=$PORT DB_USER=root"
-        
-        echo
-        echo "-----> $APP linked to $DB_IMAGE database"
-    fi
-    ;;
-
-  mariadb:console)
+  mysqldb:console)
     if $APP_EXISTS; then
         # Check argument
         if [[ -z $2 ]]; then
             echo "You must specify a database name"
             exit 1
         fi
-        DB_IMAGE="mariadb/$2"
-        if [[ ! -f "$DOKKU_ROOT/.mariadb/pwd_$2" ]]; then
-            echo "Database is not initialized correctly"
-            exit 1
-        fi
+
         DB_PASSWORD=$(cat "$DOKKU_ROOT/.mariadb/pwd_$2")
         PORT=$(cat "$DOKKU_ROOT/.mariadb/port_$2")
         # Open database using mysql-client
@@ -177,20 +95,16 @@ case "$1" in
     fi
     ;;
 
-  mariadb:dump)
+  mysqldb:dump)
     if $APP_EXISTS; then
         # Check argument
         if [[ -z $2 ]]; then
             echo "You must specify a database name"
             exit 1
         fi
-        DB_IMAGE="mariadb/$2"
-        if [[ ! -f "$DOKKU_ROOT/.mariadb/pwd_$2" ]]; then
-            echo "Database is not initialized correctly"
-            exit 1
-        fi
-        DB_PASSWORD=$(cat "$DOKKU_ROOT/.mariadb/pwd_$2")
-        PORT=$(cat "$DOKKU_ROOT/.mariadb/port_$2")
+
+        DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$2")
+        PORT=$(cat "$DOKKU_ROOT/.mysql-configs/port_$2")
         # Check if user gave a filename
         if [[ -z $3 ]]; then
             echo "Dumping to $2-dump$(date +%s).sql"
@@ -201,21 +115,13 @@ case "$1" in
     fi
     ;;
 
-  mariadb:logs)
-    DB_IMAGE=mariadb/$APP
-    ID=$(docker ps -a | grep "$DB_IMAGE" |  awk '{print $1}')
-    docker logs $ID | tail -n 100
-    ;;
-
   help)
     cat && cat<<EOF
     mariadb:create <app>      Create a MariaDB container
     mariadb:delete <app>      Delete specified MariaDB container
-    mariadb:info <app>        Display database informations
-    mariadb:link <app> <db>   Link an app to a MariaDB database
+    mariadb:info <app>        Display database information
     mariadb:console <app>     Open mysql-console to MariaDB container
     mariadb:dump <app> <file> Dump default db database into file
-    mariadb:logs <app>        Display last logs from MariaDB container
 EOF
     ;;
 
