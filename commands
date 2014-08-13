@@ -18,11 +18,8 @@ if [[ $1 == mysqldb:* ]]; then
     fi
 fi
 
-# Create .mariadb directory if does not exist
-if [[ ! -d $DOKKU_ROOT/.mysql-configs ]]; then
-    mkdir -p $DOKKU_ROOT/.mysql-configs
-    chown -R dokku: $DOKKU_ROOT/.mysql-configs
-fi
+# Load master config
+source $DOKKU_ROOT/.mysql-configs/master
 
 case "$1" in
 
@@ -31,7 +28,7 @@ case "$1" in
     if [[ -f "$DOKKU_ROOT/.mysql-configs/pwd_$APP" ]]; then
         #VOLUME="`cat $DOKKU_ROOT/.mariadb/volume_$APP`:/opt/mysql"
         echo
-        echo "-----> Existing database detected for $APP, skipping DB install"
+        echo "-----> Database config detected for $APP, skipping DB install"
     else
         #VOLUME="/opt/mysql"
         # Generate a random password for DB user
@@ -40,16 +37,18 @@ case "$1" in
         chown dokku: "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         chmod 700 "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         # connect to mySql server and create database if it does not exist.
-        mysql --host=172.17.42.1 [database_username] -p [database_password] -D [database_name] -e "SELECT * FROM [table_name]";
-        echo
-        echo "-----> MySQL Database  created for: $APP"
-        # add user & set db permissions
-        
-        # I don't think we need this, we will set master static port. Write port for further usage
-        PORT=$(docker port $ID 3306 | sed 's/0.0.0.0://')
-        echo $PORT > "$DOKKU_ROOT/.mysql-configs/port_$APP"
-        # Link to a potential existing app
-        #dokku mariadb:link $APP $APP
+        RESULT=`mysqlshow --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" $APP| grep -v Wildcard | grep -o $APP`
+        if [ "$RESULT" == "$APP" ]; then
+            # purge old user and update
+            mysql --host=HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "DROP USER $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
+            echo
+            echo "-----> $APP database already exists, updated user for database."
+        else
+            # add db & set db user/permissions
+            mysql --host=HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "CREATE DATABASE $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
+            echo
+            echo "-----> MySQL Database  created for: $APP"
+        fi
         
     fi
     sleep 1
@@ -57,10 +56,6 @@ case "$1" in
     ;;
 
   mysqldb:delete)
-    # Remove container port storage
-    if [[ -f "$DOKKU_ROOT/.mysql-configs/port_$APP" ]]; then
-        rm -f "$DOKKU_ROOT/.mysql-configs/port_$APP"
-    fi
     # Remove container db password
     if [[ -f "$DOKKU_ROOT/.mysql-configs/pwd_$APP" ]]; then
         rm -f "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
@@ -73,8 +68,8 @@ case "$1" in
 
   mysqldb:info)
     echo
-    echo "       Host: 172.17.42.1"
-    echo "       Port: $(cat "$DOKKU_ROOT/.mariadb/port_$APP")"
+    echo "       Host: $HOST"
+    echo "       Port: $PORT"
     echo "       User: 'root'"
     echo "       Password: '$(cat "$DOKKU_ROOT/.mariadb/pwd_$APP")'"
     echo "       Database: 'db'"
@@ -90,9 +85,8 @@ case "$1" in
         fi
 
         DB_PASSWORD=$(cat "$DOKKU_ROOT/.mariadb/pwd_$2")
-        PORT=$(cat "$DOKKU_ROOT/.mariadb/port_$2")
         # Open database using mysql-client
-        mysql --host=172.17.42.1 --user=root --port="$PORT" --password="$DB_PASSWORD" db
+        mysql --host="$HOST" --user="$2" --port="$PORT" --password="$DB_PASSWORD" $2
     fi
     ;;
 
@@ -105,14 +99,13 @@ case "$1" in
         fi
 
         DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$2")
-        PORT=$(cat "$DOKKU_ROOT/.mysql-configs/port_$2")
         # Check if user gave a filename
         if [[ -z $3 ]]; then
             echo "Dumping to $2-dump$(date +%s).sql"
-            mysqldump --host=172.17.42.1 --user=root --port="$PORT" --password="$DB_PASSWORD" db > "$2-dump$(date +%s).sql"
+            mysqldump --host="$HOST" --user="$2" --port="$PORT" --password="$DB_PASSWORD" $2 > "$2-dump$(date +%s).sql"
             exit 1
         fi
-        mysqldump --host=172.17.42.1 --user=root --port="$PORT" --password="$DB_PASSWORD" db > $3
+        mysqldump --host="$HOST" --user="$2" --port="$PORT" --password="$DB_PASSWORD" $2 > $3
     fi
     ;;
 
