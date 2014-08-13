@@ -1,6 +1,9 @@
 MySql Server plugin for Dokku
 ------------------------
 
+CURRENTLY BEING DEVELOPED
+------------------------
+
 Project: https://github.com/progrium/dokku
 
 This is a fork of the https://github.com/Kloadut/dokku-md-plugin that creates mysql databases on a standalone server or cluster. This makes it different from most dukku db plugins that create a dokku container for each database.
