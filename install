@@ -9,6 +9,6 @@ if [[ ! -d $DOKKU_ROOT/.mysql-configs ]]; then
     PORT="3306"
     PRIVUSER="your_db_root_user"
     PRIVPASS="your_db_root_pass"
-    EOL
+EOL
     chown -R dokku: $DOKKU_ROOT/.mysql-configs
 fi
