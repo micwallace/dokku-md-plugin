@@ -4,7 +4,7 @@
 if [[ ! -d $DOKKU_ROOT/.mysql-configs ]]; then
     mkdir -p $DOKKU_ROOT/.mysql-configs
     touch $DOKKU_ROOT/.mysql-configs/master
-    cat >/etc/myconfig.conf <<EOL
+    cat >$DOKKU_ROOT/.mysql-configs/master <<EOL
     HOST="127.0.0.1"
     PORT="3306"
     PRIVUSER="your_db_root_user"
