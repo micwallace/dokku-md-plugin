@@ -5,10 +5,10 @@ if [[ ! -d $DOKKU_ROOT/.mysql-configs ]]; then
     mkdir -p $DOKKU_ROOT/.mysql-configs
     touch $DOKKU_ROOT/.mysql-configs/master
     cat >$DOKKU_ROOT/.mysql-configs/master <<EOL
-    HOST="127.0.0.1"
-    PORT="3306"
-    PRIVUSER="your_db_root_user"
-    PRIVPASS="your_db_root_pass"
+HOST="127.0.0.1"
+PORT="3306"
+PRIVUSER="your_db_root_user"
+PRIVPASS="your_db_root_pass"
 EOL
     chown -R dokku: $DOKKU_ROOT/.mysql-configs
 fi
