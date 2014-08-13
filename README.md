@@ -1,14 +1,17 @@
-MariaDB plugin for Dokku
+MySql Server plugin for Dokku
 ------------------------
 
 Project: https://github.com/progrium/dokku
 
+This is a fork of the https://github.com/Kloadut/dokku-md-plugin that creates mysql databases on a standalone server or cluster. This makes it different from most dukku db plugins that create a dokku container for each database.
+
+That seems like way to much overhead to me :)
 
 Installation
 ------------
 ```
 cd /var/lib/dokku/plugins
-git clone https://github.com/Kloadut/dokku-md-plugin mariadb
+git clone https://github.com/micwallace/dokku-mysql-server-plugin mysql-server
 dokku plugins-install
 ```
 
@@ -17,13 +20,12 @@ Commands
 --------
 ```
 $ dokku help
-     mariadb:create <app>      Create a MariaDB container
-     mariadb:delete <app>      Delete specified MariaDB container
-     mariadb:info <app>        Display database informations
-     mariadb:link <app> <db>   Link an app to a MariaDB database
-     mariadb:console <app>     Open mysql-console to MariaDB container
-     mariadb:dump <app> <file> Dump default db database into file <file> is optional. 
-     mariadb:logs <app>        Display last logs from MariaDB container
+     mysqldb:create <app>      Create a MariaDB container
+     mysqldb:delete <app>      Delete specified MariaDB container
+     mysqldb:info <app>        Display database informations
+     mysqldb:link <app> <db>   Link app to an existing database
+     mysqldb:console <app>     Open mysql-console to MariaDB container
+     mysqldb:dump <app> <file> Dump default db database into file <file> is optional. 
 ```
 
 Info
@@ -42,16 +44,16 @@ Simple usage
 
 Create a new DB:
 ```
-$ dokku mariadb:create foo            # Server side
-$ ssh dokku@server mariadb:create foo # Client side
+$ dokku mysqldb:create foo            # Server side
+$ ssh dokku@server mysqldb:create foo # Client side
 
------> MariaDB container created: mariadb/foo
+-----> MySQL Database created for: foo
 
        Host: 172.16.0.104
-       User: 'root'
+       User: 'foo'
        Password: 'RDSBYlUrOYMtndKb'
-       Database: 'db'
-       Public port: 49187
+       Database: 'foo'
+       Public port: 3306
 ```
 
 Deploy your app with the same name (client side):
@@ -71,8 +73,8 @@ remote: -----> Using Ruby version: ruby-2.0.0
 
 remote: -----> Deploying foo ...
 remote: 
-remote: -----> App foo linked to mariadb/foo database
-remote:        DATABASE_URL=mysql://root:RDSBYlUrOYMtndKb@172.16.0.104/db
+remote: -----> App foo linked to foo database
+remote:        DATABASE_URL=mysql://root:RDSBYlUrOYMtndKb@172.16.0.104/foo
 remote: 
 remote: -----> Deploy complete!
 remote: -----> Cleaning up ...
@@ -87,35 +89,30 @@ Advanced usage
 
 Inititalize the database with SQL statements:
 ```
-cat init.sql | dokku mariadb:create foo
+cat init.sql | dokku mysqldb:create foo
 ```
 
 Deleting databases:
 ```
-dokku mariadb:delete foo
+dokku mysqldb:delete foo
 ```
 
 Linking an app to a specific database:
 ```
-dokku mariadb:link foo bar
-```
-
-MariaDB logs (per database):
-```
-dokku mariadb:logs foo
+dokku mysqldb:link foo bar
 ```
 
 Database informations:
 ```
-dokku mariadb:info foo
+dokku mysqldb:info foo
 ```
 
 Login to mariadb console
 ```
-dokku mariadb:console
+dokku mysqldb:console
 ```
 
 Import to existing database
 ```
-dokku mariadb:console < import.sql
+dokku mysqldb:console < import.sql
 ```
