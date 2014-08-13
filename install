@@ -1,3 +1,14 @@
 #!/bin/bash
 
-# No install needed, we use external mysql server/cluster :)
+# Create .mysql-configs directory and master config file if does not exist
+if [[ ! -d $DOKKU_ROOT/.mysql-configs ]]; then
+    mkdir -p $DOKKU_ROOT/.mysql-configs
+    touch $DOKKU_ROOT/.mysql-configs/master
+    cat >/etc/myconfig.conf <<EOL
+    HOST="127.0.0.1"
+    PORT="3306"
+    PRIVUSER="your_db_root_user"
+    PRIVPASS="your_db_root_pass"
+    EOL
+    chown -R dokku: $DOKKU_ROOT/.mysql-configs
+fi
