@@ -20,11 +20,11 @@ Commands
 --------
 ```
 $ dokku help
-     mysqldb:create <app>      Create a MariaDB container
-     mysqldb:delete <app>      Delete specified MariaDB container
+     mysqldb:create <app>      Create a MySql container
+     mysqldb:delete <app>      Delete specified MySql container
      mysqldb:info <app>        Display database informations
      mysqldb:link <app> <db>   Link app to an existing database
-     mysqldb:console <app>     Open mysql-console to MariaDB container
+     mysqldb:console <app>     Open mysql-console to MySql database
      mysqldb:dump <app> <file> Dump default db database into file <file> is optional. 
 ```
 
