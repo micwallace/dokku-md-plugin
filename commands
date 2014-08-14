@@ -39,17 +39,16 @@ case "$1" in
         echo
             echo "-----> Created config file for new database"
         # connect to mySql server and create database if it does not exist.
-        RESULT=`mysqlshow --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" $APP| grep -v Wildcard | grep -o $APP`;
-        if [ "$RESULT" == $APP ]; then
-            # add db & set db user/permissions
-            echo
-            echo "-----> MySQL Database  created for: $APP"
-            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "CREATE DATABASE $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
-        else
+        if ! mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e 'USE $APP'; then
             #purge old user and update
             echo
             echo "-----> $APP database already exists, updating user for database."
             mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "DROP USER $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
+        else
+            # add db & set db user/permissions
+            echo
+            echo "-----> Creating MySQL Database for: $APP"
+            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "CREATE DATABASE $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
         fi
         # Link to a potential existing app
         dokku mariadb:link $APP $APP
