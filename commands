@@ -37,8 +37,8 @@ case "$1" in
         chown dokku: "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         chmod 700 "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         # connect to mySql server and create database if it does not exist.
-        DBEXISTS=$(mysql --batch --skip-column-names -e "SHOW DATABASES LIKE '"$APP"';" | grep "$DBNAME" > /dev/null; echo "$?")
-        if [ $DBEXISTS -eq 0 ]; then
+        DBEXISTS=$(mysql --batch --skip-column-names --host=HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "SHOW DATABASES LIKE '"$APP"';" | grep "$APP" > /dev/null; echo "$?")
+        if [ $DBEXISTS -eq 0 ];then
             #purge old user and update
             mysql --host=HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "DROP USER $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
             echo
