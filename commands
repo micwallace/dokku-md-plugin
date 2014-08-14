@@ -37,8 +37,7 @@ case "$1" in
         chown dokku: "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         chmod 700 "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         # connect to mySql server and create database if it does not exist.
-        RESULT=`mysqlshow --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" $APP| grep -v Wildcard | grep -o $APP`
-        if [ $DBEXISTS -eq 0 ];then
+        RESULT=`mysqlshow --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" $APP| grep -v Wildcard | grep -o $APP`;
         if [ "$RESULT" == $APP ]; then
             # add db & set db user/permissions
             echo
