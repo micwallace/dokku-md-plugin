@@ -37,17 +37,16 @@ case "$1" in
         chown dokku: "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         chmod 700 "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         # connect to mySql server and create database if it does not exist.
-        RESULT=`mysqlshow --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" $APP| grep -v Wildcard | grep -o $APP`
-        if [ "$RESULT" == "$APP" ]; then
-            # purge old user and update
-            mysql --host=HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "DROP USER $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
-            echo
-            echo "-----> $APP database already exists, updated user for database."
-        else
+        if ! $(mysql --host=HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "USE $APP"); then
             # add db & set db user/permissions
             mysql --host=HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "CREATE DATABASE $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
             echo
             echo "-----> MySQL Database  created for: $APP"
+        else
+           # purge old user and update
+            mysql --host=HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "DROP USER $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
+            echo
+            echo "-----> $APP database already exists, updated user for database." 
         fi
         # Link to a potential existing app
         dokku mariadb:link $APP $APP
