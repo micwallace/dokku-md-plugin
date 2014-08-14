@@ -63,9 +63,9 @@ case "$1" in
         rm -f "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
     fi
     
-    # Connect to mysql, backup database & delete
+    # TODO: Connect to mysql, backup database & delete
     echo
-    echo "-----> MySQL database deleted for: $APP"
+    echo "-----> MySQL database config deleted for: $APP"
     ;;
     
   mariadb:link)
