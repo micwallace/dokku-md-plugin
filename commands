@@ -37,18 +37,18 @@ case "$1" in
         chown dokku: "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         chmod 700 "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         # connect to mySql server and create database if it does not exist.
-        DBEXISTS=$(mysql --batch --skip-column-names --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "SHOW DATABASES LIKE '"$APP"';" | grep "$APP" > /dev/null; echo "$?")
+        RESULT=`mysqlshow --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" $APP| grep -v Wildcard | grep -o $APP`
         if [ $DBEXISTS -eq 0 ];then
-            #purge old user and update
-            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "DROP USER $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
-            echo
-            echo "-----> $APP database already exists, updated user for database." 
-        else
+        if [ "$RESULT" == $APP ]; then
             # add db & set db user/permissions
-            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "CREATE DATABASE $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
             echo
             echo "-----> MySQL Database  created for: $APP"
-           
+            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "CREATE DATABASE $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
+        else
+            #purge old user and update
+            echo
+            echo "-----> $APP database already exists, updating user for database."
+            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "DROP USER $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
         fi
         # Link to a potential existing app
         dokku mariadb:link $APP $APP
