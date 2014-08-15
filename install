@@ -3,7 +3,6 @@
 # Create .mysql-configs directory and master config file if does not exist
 if [[ ! -d $DOKKU_ROOT/.mysql-configs ]]; then
     mkdir -p $DOKKU_ROOT/.mysql-configs
-    mkdir -p $DOKKU_ROOT/mysql_backups
     touch $DOKKU_ROOT/.mysql-configs/master
     cat >$DOKKU_ROOT/.mysql-configs/master <<EOL
 HOST="127.0.0.1"
@@ -12,4 +11,8 @@ PRIVUSER="your_db_root_user"
 PRIVPASS="your_db_root_pass"
 EOL
     chown -R dokku: $DOKKU_ROOT/.mysql-configs
+fi
+if [[ ! -d $DOKKU_ROOT/mysql-backups ]]; then
+    mkdir -p $DOKKU_ROOT/mysql-backups
+    chown -R dokku: $DOKKU_ROOT/mysql-backups
 fi
