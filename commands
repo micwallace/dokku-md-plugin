@@ -116,8 +116,6 @@ case "$1" in
         echo "The Database is not configured, use mysqldb:create $3 first."
         exit 1
     fi
-        
-    if [[ ! -f "$DOKKU_ROOT/.mysql-configs/pwd_$3" ]]; then
 
     DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$2")
     # Open database using mysql-client
@@ -142,10 +140,10 @@ case "$1" in
     if [[ -z $3 ]]; then
         echo "Dumping to $2-dump$(date +%s).sql"
         mysqldump --host="$HOST" --user="$2" --port="$PORT" --password="$DB_PASSWORD" $2 > "$2-dump$(date +%s).sql"
-        exit 1
+    else
+        echo "Dumping to $3"
+        mysqldump --host="$HOST" --user="$2" --port="$PORT" --password="$DB_PASSWORD" $2 > $3
     fi
-    mysqldump --host="$HOST" --user="$2" --port="$PORT" --password="$DB_PASSWORD" $2 > $3
-    
     ;;
 
   help)
