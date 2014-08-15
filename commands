@@ -49,7 +49,7 @@ case "$1" in
             # add db & set db user/permissions
             echo
             echo "-----> Creating MySQL Database for: $APP"
-            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "CREATE DATABASE $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
+            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "CREATE DATABASE $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' IDENTIFIED BY '$DB_PASSWORD';";
         fi
         # Link to a potential existing app
         dokku mariadb:link $APP $APP
