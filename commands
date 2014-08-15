@@ -52,7 +52,7 @@ case "$1" in
             mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "CREATE DATABASE $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' IDENTIFIED BY '$DB_PASSWORD';";
         fi
         # Link to a potential existing app
-        dokku mariadb:link $APP
+        dokku mariadb:link $APP $APP
     fi
     sleep 1
     dokku mysqldb:info $APP
