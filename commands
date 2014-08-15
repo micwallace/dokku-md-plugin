@@ -87,11 +87,11 @@ case "$1" in
     fi
     DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$3")
     # Link database using dokku command
-    dokku config:set $APP "DATABASE_URL=mysql2://$APP:$DB_PASSWORD@$HOST:$PORT/$APP"
+    dokku config:set $2 "DATABASE_URL=mysql2://$3:$DB_PASSWORD@$HOST:$PORT/$3"
     #All DB-variables as ENV
-    dokku config:set $APP "DB_HOST=$HOST DB_PASSWORD=$DB_PASSWORD DB_NAME=$APP DB_PORT=$PORT DB_USER=$APP"
+    dokku config:set $2 "DB_HOST=$HOST DB_PASSWORD=$DB_PASSWORD DB_NAME=$3 DB_PORT=$PORT DB_USER=$3"
     echo
-    echo "-----> $APP linked to $3 database"
+    echo "-----> $2 linked to $3 database"
     
     fi
     ;;
