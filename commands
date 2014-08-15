@@ -52,7 +52,7 @@ case "$1" in
             mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "CREATE DATABASE $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' IDENTIFIED BY '$DB_PASSWORD';";
         fi
         # Link to a potential existing app
-        dokku mariadb:link $APP $APP
+        dokku mariadb:link $APP
     fi
     sleep 1
     dokku mysqldb:info $APP
@@ -70,18 +70,20 @@ case "$1" in
     ;;
     
   mariadb:link)
-    if $APP_EXISTS; then
+    if [[ -z $3 ]]; then
         # Check argument, if not exists, link to database with same name as the app
-        if [[ -z $3 ]]; then
+        if $APP_EXISTS; then
         echo "Linking db to $APP"
         DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$APP")
         # Link database using dokku command
         dokku config:set $APP "DATABASE_URL=mysql2://$APP:$DB_PASSWORD@$HOST:$PORT/$APP"
         #All DB-variables as ENV
         dokku config:set $APP "DB_HOST=$HOST DB_PASS=$DB_PASSWORD DB_NAME=$APP DB_PORT=$PORT DB_USER=$APP"
+        else
+           echo "No App detected with the same name, skipping database link." 
+        fi
         exit 1
     fi
-    echo "No App detected with the same name, skipping database link."
     if [[ ! -f "$DOKKU_ROOT/.mysql-configs/pwd_$3" ]]; then
         echo "The target database does not exist in the configuration, run mysqldb:create first."
         exit 1
@@ -94,6 +96,30 @@ case "$1" in
     echo
     echo "-----> $2 linked to $3 database"
     
+    fi
+    
+    if $APP_EXISTS; then
+        # Check argument
+        if [[ -z $3 ]]; then
+            echo "Linking db to $APP"
+            DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$APP")
+            # Link database using dokku command
+            dokku config:set $APP "DATABASE_URL=mysql2://$APP:$DB_PASSWORD@$HOST:$PORT/$APP"
+            #All DB-variables as ENV
+            dokku config:set $APP "DB_HOST=$HOST DB_PASS=$DB_PASSWORD DB_NAME=$APP DB_PORT=$PORT DB_USER=$APP"
+            exit 1
+        fi
+        if [[ ! -f "$DOKKU_ROOT/.mysql-configs/pwd_$3" ]]; then
+            echo "Database is not configured correctly, use mysqldb:create $3 first."
+            exit 1
+        fi
+        DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$3")
+        # Link database using dokku command
+        dokku config:set $APP "DATABASE_URL=mysql2://$3:$DB_PASSWORD@$HOST:$PORT/$3"
+        #All DB-variables as ENV
+        dokku config:set $APP "DB_HOST=$HOST DB_PASSWORD=$DB_PASSWORD DB_NAME=$3 DB_PORT=$PORT DB_USER=$3"
+        echo
+        echo "-----> $APP linked to $3 database"
     fi
     ;;
 
