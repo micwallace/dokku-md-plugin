@@ -39,7 +39,8 @@ case "$1" in
         echo
             echo "-----> Created config file for new database"
         # connect to mySql server and create database if it does not exist.
-        if ! $(mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "USE $APP"); then
+        DBEXISTS=$(mysql --batch --skip-column-names --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "SHOW DATABASES LIKE '"$APP"';" | grep "$APP" > /dev/null; echo "$?")
+        if [ $DBEXISTS -eq 0 ];then
             #purge old user and update
             echo
             echo "-----> $APP database already exists, updating user for database."
