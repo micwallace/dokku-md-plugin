@@ -81,6 +81,7 @@ case "$1" in
         dokku config:set $APP "DB_HOST=$HOST DB_PASS=$DB_PASSWORD DB_NAME=$APP DB_PORT=$PORT DB_USER=$APP"
         exit 1
     fi
+    echo "No App detected with the same name, skipping database link."
     if [[ ! -f "$DOKKU_ROOT/.mysql-configs/pwd_$3" ]]; then
         echo "The target database does not exist in the configuration, run mysqldb:create first."
         exit 1
