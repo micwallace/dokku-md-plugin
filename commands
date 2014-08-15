@@ -11,7 +11,6 @@ if [[ $1 == mysqldb:* ]]; then
         APP="$2"
         # Check if app exists with the same name
         if [[ -d "$DOKKU_ROOT/$APP" ]]; then
-            echo "App exists"
             APP_EXISTS=true
         else
             APP_EXISTS=false
@@ -72,6 +71,10 @@ case "$1" in
     
   mariadb:link)
     if $APP_EXISTS; then
+        if [[ ! -d "$DOKKU_ROOT/$APP" ]]; then
+            exit 1
+        fi
+        echo $APP_EXISTS
         # Check argument
         if [[ -z $3 ]]; then
             echo "Linking db to $APP"
