@@ -1,9 +1,6 @@
 MySql Server plugin for Dokku
 ------------------------
 
-CURRENTLY BEING DEVELOPED
-------------------------
-
 Project: https://github.com/progrium/dokku
 
 This is a fork of the https://github.com/Kloadut/dokku-md-plugin that creates mysql databases on a standalone server or cluster. This makes it different from most dukku db plugins that create a dokku container for each database.
@@ -12,12 +9,20 @@ That seems like way to much overhead to me :)
 
 Installation
 ------------
+
+Install the plugin
 ```
 cd /var/lib/dokku/plugins
 git clone https://github.com/micwallace/dokku-mysql-server-plugin mysql-server
 dokku plugins-install
 ```
 
+Then replace the master config file with your database credentials. 
+```
+vi /home/dokku/.mysql-configs/master
+```
+
+NOTE: The user specified must have root privilleges, and if mysql is running on a remote host, must be allowed to login remotely from dokku's IP address.
 
 Commands
 --------
