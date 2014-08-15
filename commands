@@ -44,7 +44,7 @@ case "$1" in
             #purge old user and update
             echo
             echo "-----> $APP database already exists, updating user for database."
-            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "DROP USER $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' INDENTIFIED BY '$DB_PASSWORD';";
+            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "DROP USER $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' IDENTIFIED BY '$DB_PASSWORD';";
         else
             # add db & set db user/permissions
             echo
