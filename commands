@@ -69,12 +69,8 @@ case "$1" in
     echo "-----> MySQL database config deleted for: $APP"
     ;;
     
-  mariadb:link)
+  mysqldb:link)
     if $APP_EXISTS; then
-        if [[ ! -d "$DOKKU_ROOT/$APP" ]]; then
-            exit 1
-        fi
-        echo $APP_EXISTS
         # Check argument
         if [[ -z $3 ]]; then
             echo "Linking db to $APP"
