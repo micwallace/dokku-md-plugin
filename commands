@@ -150,7 +150,7 @@ case "$1" in
     cat && cat<<EOF
     mysqldb:create <app>      Create a MySQL database
     mysqldb:delete <app>      Delete specified MySQL database
-    mysqldb:info <app> <db>   Link app to a specific database
+    mysqldb:link <app> <db>   Link app to a specific database
     mysqldb:info <app>        Display database information
     mysqldb:console <app>     Open mysql-console to a MySQL database
     mysqldb:dump <app> <file> Dump default db database into file
