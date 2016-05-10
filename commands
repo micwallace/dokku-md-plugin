@@ -142,8 +142,8 @@ case "$1" in
     fi
     ;;
 
-  help)
-    cat && cat<<EOF
+  help | hello:help)
+    cat<<EOF
     mysqldb:create <app>      Create a MySQL database
     mysqldb:delete <app>      Delete specified MySQL database
     mysqldb:link <app> <db>   Link app to a specific database
