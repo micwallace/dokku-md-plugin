@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e;
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 
 # Check if name is specified
 if [[ $1 == mysqldb:* ]]; then
@@ -151,6 +151,10 @@ case "$1" in
     mysqldb:console <app>     Open mysql-console to a MySQL database
     mysqldb:dump <app> <file> Dump default db database into file
 EOF
+    ;;
+    
+    *)
+    exit $DOKKU_NOT_IMPLEMENTED_EXIT
     ;;
 
 esac
