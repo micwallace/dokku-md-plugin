@@ -76,7 +76,7 @@ case "$1" in
             echo "Linking db to $APP"
             DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$APP")
             # Link database using dokku command
-            dokku config:set $APP "DATABASE_URL=mysql2://$APP:$DB_PASSWORD@$HOST:$PORT/$APP DB_HOST=$HOST DB_PASS=$DB_PASSWORD DB_NAME=$APP DB_PORT=$PORT DB_USER=$APP"
+            dokku config:set $APP DATABASE_URL="mysql2://$APP:$DB_PASSWORD@$HOST:$PORT/$APP" DB_HOST=$HOST DB_PASS=$DB_PASSWORD DB_NAME=$APP DB_PORT=$PORT DB_USER=$APP
             exit 1
         fi
         if [[ ! -f "$DOKKU_ROOT/.mysql-configs/pwd_$3" ]]; then
@@ -85,7 +85,7 @@ case "$1" in
         fi
         DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$3")
         # Link database using dokku command
-        dokku config:set $APP "DATABASE_URL=mysql2://$3:$DB_PASSWORD@$HOST:$PORT/$3 DB_HOST=$HOST DB_PASSWORD=$DB_PASSWORD DB_NAME=$3 DB_PORT=$PORT DB_USER=$3"
+        dokku config:set $APP DATABASE_URL="mysql2://$3:$DB_PASSWORD@$HOST:$PORT/$3" DB_HOST=$HOST DB_PASSWORD=$DB_PASSWORD DB_NAME=$3 DB_PORT=$PORT DB_USER=$3
         echo ""
         echo "-----> $APP linked to $3 database"
     fi
