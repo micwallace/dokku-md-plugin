@@ -34,7 +34,7 @@ case "$1" in
         # Generate a random password for DB user
         DB_PASSWORD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c 16)
         echo $DB_PASSWORD > "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
-        chown dokku: "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
+        chown dokku "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         chmod 700 "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         echo
             echo "-----> Created config file for new database"
@@ -142,7 +142,7 @@ case "$1" in
     fi
     ;;
 
-  help | hello:help)
+  help | mysqldb:help)
     cat<<EOF
     mysqldb:create <app>      Create a MySQL database
     mysqldb:delete <app>      Delete specified MySQL database
