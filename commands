@@ -17,10 +17,9 @@ if [[ $1 == mysqldb:* ]] && [[ $1 != mysqldb:help ]]; then
         fi
     fi
 fi
-echo "Loading master config";
+
 # Load master config
 source $DOKKU_ROOT/.mysql-configs/master
-echo "Loaded master config";
 
 case "$1" in
 
@@ -31,6 +30,7 @@ case "$1" in
         echo
         echo "-----> Database config detected for $APP, skipping DB install"
     else
+        echo "Creating database config";
         #VOLUME="/opt/mysql"
         # Generate a random password for DB user
         DB_PASSWORD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c 16)
