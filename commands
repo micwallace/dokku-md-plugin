@@ -17,9 +17,10 @@ if [[ $1 == mysqldb:* ]] && [[ $1 != mysqldb:help ]]; then
         fi
     fi
 fi
-
+echo "Loading master config";
 # Load master config
 source $DOKKU_ROOT/.mysql-configs/master
+echo "Loaded master config";
 
 case "$1" in
 
