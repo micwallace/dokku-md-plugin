@@ -4,7 +4,7 @@ set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 # Check if name is specified
 if [[ $1 == mysqldb:* ]] && [[ $1 != mysqldb:help ]]; then
     if [[ -z $2 ]]; then
-        echo
+        echo ""
         echo "You must specify an app name"
         exit 1
     else
@@ -27,28 +27,27 @@ case "$1" in
     # Check if an existing DB volume exists
     if [[ -f "$DOKKU_ROOT/.mysql-configs/pwd_$APP" ]]; then
         #VOLUME="`cat $DOKKU_ROOT/.mariadb/volume_$APP`:/opt/mysql"
-        echo
+        echo ""
         echo "-----> Database config detected for $APP, skipping DB install"
     else
-        echo "Creating database config";
         #VOLUME="/opt/mysql"
         # Generate a random password for DB user
         DB_PASSWORD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c 16)
         echo $DB_PASSWORD > "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         chown dokku "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
         chmod 700 "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
-        echo
-            echo "-----> Created config file for new database"
+        echo ""
+        echo "-----> Created config file for new database"
         # connect to mySql server and create database if it does not exist.
         DBEXISTS=$(mysql --batch --skip-column-names --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "SHOW DATABASES LIKE '"$APP"';" | grep "$APP" > /dev/null; echo "$?")
         if [ $DBEXISTS -eq 0 ];then
             #purge old user and update
-            echo
+            echo ""
             echo "-----> $APP database already exists, updating user for database."
             mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "DROP USER $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' IDENTIFIED BY '$DB_PASSWORD';";
         else
             # add db & set db user/permissions
-            echo
+            echo ""
             echo "-----> Creating MySQL Database for: $APP"
             mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "CREATE DATABASE $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' IDENTIFIED BY '$DB_PASSWORD';";
         fi
@@ -66,7 +65,7 @@ case "$1" in
     fi
     
     # TODO: Connect to mysql, backup database & delete
-    echo
+    echo ""
     echo "-----> MySQL database config deleted for: $APP"
     ;;
     
@@ -87,13 +86,13 @@ case "$1" in
         DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$3")
         # Link database using dokku command
         dokku config:set $APP "DATABASE_URL=mysql2://$3:$DB_PASSWORD@$HOST:$PORT/$3 DB_HOST=$HOST DB_PASSWORD=$DB_PASSWORD DB_NAME=$3 DB_PORT=$PORT DB_USER=$3"
-        echo
+        echo ""
         echo "-----> $APP linked to $3 database"
     fi
     ;;
 
   mysqldb:info)
-    echo
+    echo ""
     echo "       Host: $HOST"
     echo "       Port: $PORT"
     echo "       User: '$APP'"
