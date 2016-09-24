@@ -32,7 +32,7 @@ case "$1" in
     else
         #VOLUME="/opt/mysql"
         # Check if database name is supplied, otherwise use app name
-        if [ -z "$3" ];then
+        if [ -z $3 ];then
             DB_NAME=$APP
         else
             DB_NAME=$3
