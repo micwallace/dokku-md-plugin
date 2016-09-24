@@ -39,9 +39,9 @@ case "$1" in
         fi
         # Generate a random password for DB user
         DB_PASSWORD=$(openssl rand -base64 24 | sed 's/\//_/g')
-        echo $DB_PASSWORD > "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
-        chown dokku "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
-        chmod 700 "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
+        echo $DB_PASSWORD > "$DOKKU_ROOT/.mysql-configs/pwd_$DB_NAME"
+        chown dokku "$DOKKU_ROOT/.mysql-configs/pwd_$DB_NAME"
+        chmod 700 "$DOKKU_ROOT/.mysql-configs/pwd_$DB_NAME"
         echo ""
         echo "-----> Created config file for new database"
         # connect to mySql server and create database if it does not exist.
@@ -65,9 +65,10 @@ case "$1" in
     ;;
 
   mysqldb:delete)
+    DB_NAME=$(dokku config:get $2 DB_NAME)
     # Remove container db password
-    if [[ -f "$DOKKU_ROOT/.mysql-configs/pwd_$APP" ]]; then
-        rm -f "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
+    if [[ -f "$DOKKU_ROOT/.mysql-configs/pwd_$DB_NAME" ]]; then
+        rm -f "$DOKKU_ROOT/.mysql-configs/pwd_$DB_NAME"
     fi
     
     # TODO: Connect to mysql, backup database & delete
@@ -98,28 +99,30 @@ case "$1" in
     ;;
 
   mysqldb:info)
+    DB_NAME=$(dokku config:get $2 DB_NAME)
     echo ""
     echo "       Host: $HOST"
     echo "       Port: $PORT"
     echo "       User: '$APP'"
-    echo "       Password: '$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$APP")'"
-    echo "       Database: '$(dokku config:get $APP DB_NAME)'"
+    echo "       Password: '$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$DB_NAME")'"
+    echo "       Database: '$DB_NAME'"
     echo
     ;;
 
   mysqldb:console)
     # Check argument
     if [[ -z $2 ]]; then
-        echo "You must specify a database name"
+        echo "You must specify an app name"
         exit 1
     fi
         
-    if [[ ! -f "$DOKKU_ROOT/.mysql-configs/pwd_$2" ]]; then
+    DB_NAME=$(dokku config:get $2 DB_NAME)
+    if [[ ! -f "$DOKKU_ROOT/.mysql-configs/pwd_$DB_NAME" ]]; then
         echo "The Database is not configured, use mysqldb:create $2 first."
         exit 1
     fi
-    DB_NAME=$(dokku config:get $2 DB_NAME)
-    DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$2")
+    DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$DB_NAME")
+    
     # Open database using mysql-client
     mysql --host="$HOST" --user="$2" --port="$PORT" --password="$DB_PASSWORD" $DB_NAME
     
@@ -131,18 +134,18 @@ case "$1" in
         echo "You must specify an app name"
         exit 1
     fi
-        
-    if [[ ! -f "$DOKKU_ROOT/.mysql-configs/pwd_$2" ]]; then
+    
+    DB_NAME=$(dokku config:get $2 DB_NAME)
+    if [[ ! -f "$DOKKU_ROOT/.mysql-configs/pwd_$DB_NAME" ]]; then
         echo "The Database is not configured, use mysqldb:create $2 first."
         exit 1
     fi
-
-    DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$2")
-    DB_NAME=$(dokku config:get $2 DB_NAME)
+    DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$DB_NAME")
+    
     # Check if user gave a filename
     if [[ -z $3 ]]; then
         echo "Dumping to $2-dump$(date +%s).sql"
-        mysqldump --host="$HOST" --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" $DB_NAME > "$DOKKU_ROOT/mysql-backups/$2-dump$(date +%s).sql"
+        mysqldump --host="$HOST" --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" $DB_NAME > "$DOKKU_ROOT/mysql-backups/$DB_NAME-dump$(date +%s).sql"
     else
         echo "Dumping to $3"
         mysqldump --host="$HOST" --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" $DB_NAME > "$DOKKU_ROOT/mysql-backups/$3"
