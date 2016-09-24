@@ -31,6 +31,12 @@ case "$1" in
         echo "-----> Database config detected for $APP, skipping DB install"
     else
         #VOLUME="/opt/mysql"
+        # Check if database name is supplied, otherwise use app name
+        if [ -z "$3" ];then
+            DB_NAME=$APP
+        else
+            DB_NAME=$3
+        fi
         # Generate a random password for DB user
         DB_PASSWORD=$(openssl rand -base64 24 | sed 's/\//_/g')
         echo $DB_PASSWORD > "$DOKKU_ROOT/.mysql-configs/pwd_$APP"
@@ -39,20 +45,20 @@ case "$1" in
         echo ""
         echo "-----> Created config file for new database"
         # connect to mySql server and create database if it does not exist.
-        DBEXISTS=$(mysql --batch --skip-column-names --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "SHOW DATABASES LIKE '"$APP"';" | grep "$APP" > /dev/null; echo "$?")
+        DBEXISTS=$(mysql --batch --skip-column-names --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "SHOW DATABASES LIKE '"$DB_NAME"';" | grep "$DB_NAME" > /dev/null; echo "$?")
         if [ $DBEXISTS -eq 0 ];then
             #purge old user and update
             echo ""
             echo "-----> $APP database already exists, updating user for database."
-            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "DROP USER $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' IDENTIFIED BY '$DB_PASSWORD';";
+            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "DROP USER $APP; GRANT ALL PRIVILEGES ON $DB_NAME.* to $APP@'%' IDENTIFIED BY '$DB_PASSWORD';";
         else
             # add db & set db user/permissions
             echo ""
             echo "-----> Creating MySQL Database for: $APP"
-            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "CREATE DATABASE $APP; GRANT ALL PRIVILEGES ON $APP.* to $APP@'%' IDENTIFIED BY '$DB_PASSWORD';";
+            mysql --host=$HOST --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" -e "CREATE DATABASE $DB_NAME; GRANT ALL PRIVILEGES ON $DB_NAME.* to $APP@'%' IDENTIFIED BY '$DB_PASSWORD';";
         fi
         # Link to a potential existing app
-        dokku mysqldb:link $APP $APP
+        dokku mysqldb:link $APP $DB_NAME
     fi
     sleep 1
     dokku mysqldb:info $APP
@@ -97,7 +103,7 @@ case "$1" in
     echo "       Port: $PORT"
     echo "       User: '$APP'"
     echo "       Password: '$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$APP")'"
-    echo "       Database: '$APP'"
+    echo "       Database: '$(dokku config:get $APP DB_NAME)'"
     echo
     ;;
 
@@ -112,17 +118,17 @@ case "$1" in
         echo "The Database is not configured, use mysqldb:create $2 first."
         exit 1
     fi
-
+    DB_NAME=$(dokku config:get $2 DB_NAME)
     DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$2")
     # Open database using mysql-client
-    mysql --host="$HOST" --user="$2" --port="$PORT" --password="$DB_PASSWORD" $2
+    mysql --host="$HOST" --user="$2" --port="$PORT" --password="$DB_PASSWORD" $DB_NAME
     
     ;;
 
   mysqldb:dump)
     # Check argument
     if [[ -z $2 ]]; then
-        echo "You must specify a database name"
+        echo "You must specify an app name"
         exit 1
     fi
         
@@ -132,24 +138,25 @@ case "$1" in
     fi
 
     DB_PASSWORD=$(cat "$DOKKU_ROOT/.mysql-configs/pwd_$2")
+    DB_NAME=$(dokku config:get $2 DB_NAME)
     # Check if user gave a filename
     if [[ -z $3 ]]; then
         echo "Dumping to $2-dump$(date +%s).sql"
-        mysqldump --host="$HOST" --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" $2 > "$DOKKU_ROOT/mysql-backups/$2-dump$(date +%s).sql"
+        mysqldump --host="$HOST" --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" $DB_NAME > "$DOKKU_ROOT/mysql-backups/$2-dump$(date +%s).sql"
     else
         echo "Dumping to $3"
-        mysqldump --host="$HOST" --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" $2 > "$DOKKU_ROOT/mysql-backups/$3"
+        mysqldump --host="$HOST" --user="$PRIVUSER" --port="$PORT" --password="$PRIVPASS" $DB_NAME > "$DOKKU_ROOT/mysql-backups/$3"
     fi
     ;;
 
   help | mysqldb:help)
     cat<<EOF
-    mysqldb:create <app>      Create a MySQL database
+    mysqldb:create <app> <name>     Create a MySQL database (name is app if not provided)
     mysqldb:delete <app>      Delete specified MySQL database
     mysqldb:link <app> <db>   Link app to a specific database
     mysqldb:info <app>        Display database information
-    mysqldb:console <app>     Open mysql-console to a MySQL database
-    mysqldb:dump <app> <file> Dump default db database into file
+    mysqldb:console <app>     Open mysql-console to MySQL database
+    mysqldb:dump <app> <file> Dump app database into file
 EOF
     ;;
     
